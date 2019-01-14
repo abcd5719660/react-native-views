@@ -70,7 +70,11 @@ class RecyclerView extends React.PureComponent {
     ItemSeparatorComponent: PropTypes.element,
     onVisibleItemsChange: PropTypes.func
   }
-
+    isScrollDataChange = false;
+    firstVisibleIndex;
+    lastVisibleIndex;
+    timer;
+    timer2;
   static defaultProps = {
     dataSource: new DataSource([], (item, i) => i),
     initialListSize: 10,
@@ -286,26 +290,37 @@ class RecyclerView extends React.PureComponent {
   }
 
   scrollToIndex = ({ animated = true, index, velocity, viewPosition, viewOffset }) => {
-    index = Math.max(0, Math.min(index, this.props.dataSource.size()-1));
+      index = Math.max(0, Math.min(index, this.props.dataSource.size() - 1));
 
-    if (animated) {
-      UIManager.dispatchViewManagerCommand(
-          ReactNative.findNodeHandle(this),
-          UIManager.AndroidRecyclerViewBackedScrollView.Commands.scrollToIndex,
-          [animated, index, velocity, viewPosition, viewOffset],
-        );
-    } else {
-      this.setState({
-        firstVisibleIndex: index,
-        lastVisibleIndex: index + (this.state.lastVisibleIndex - this.state.firstVisibleIndex)
-      }, () => {
-        UIManager.dispatchViewManagerCommand(
-            ReactNative.findNodeHandle(this),
-            UIManager.AndroidRecyclerViewBackedScrollView.Commands.scrollToIndex,
-            [animated, index, velocity, viewPosition, viewOffset],
+      if (animated) {
+          UIManager.dispatchViewManagerCommand(
+              ReactNative.findNodeHandle(this),
+              UIManager.AndroidRecyclerViewBackedScrollView.Commands.scrollToIndex,
+              [animated, index, velocity, viewPosition, viewOffset],
           );
-      });
-    }
+      } else {
+          this.isScrollDataChange = true;
+          if (this.timer2) {
+              clearTimeout(this.timer2);
+          }
+          if (this.timer) {
+              clearTimeout(this.timer);
+          }
+          this.timer2 = setTimeout(() => { // 当滚动跳转到指定位置时同时滑动会出现白屏，故这里也改变这个值在onVisibleItem中setState才会执行
+              this.isScrollDataChange = false;
+              clearTimeout(this.timer2);
+          }, 1200);
+          this.setState({
+              firstVisibleIndex: index,
+              lastVisibleIndex: index + (this.state.lastVisibleIndex - this.state.firstVisibleIndex)
+          }, () => {
+              UIManager.dispatchViewManagerCommand(
+                  ReactNative.findNodeHandle(this),
+                  UIManager.AndroidRecyclerViewBackedScrollView.Commands.scrollToIndex,
+                  [animated, index, velocity, viewPosition, viewOffset],
+              );
+          });
+      }
   }
 
   _needsItemUpdate(itemKey) {
@@ -313,18 +328,26 @@ class RecyclerView extends React.PureComponent {
   }
 
   _handleVisibleItemsChange = ({nativeEvent}) => {
-    var firstIndex = nativeEvent.firstIndex;
-    var lastIndex = nativeEvent.lastIndex;
-
-    this.setState({
-      firstVisibleIndex: firstIndex,
-      lastVisibleIndex: lastIndex,
-    });
-
-    const { onVisibleItemsChange } = this.props;
-    if (onVisibleItemsChange) {
-      onVisibleItemsChange(nativeEvent);
-    }
+      var firstIndex = nativeEvent.firstIndex;
+      var lastIndex = nativeEvent.lastIndex;
+      if (this.timer) {
+          clearTimeout(this.timer);
+      }
+      if (this.isScrollDataChange) {
+          this.timer = setTimeout(() => {
+              this.isScrollDataChange = false;
+              clearTimeout(this.timer);
+          }, 1000);
+      } else {
+          this.setState({
+              firstVisibleIndex: firstIndex,
+              lastVisibleIndex: lastIndex,
+          });
+      }
+      const {onVisibleItemsChange} = this.props;
+      if (onVisibleItemsChange) {
+          onVisibleItemsChange(nativeEvent);
+      }
   }
 
   _calcItemRangeToRender(firstVisibleIndex, lastVisibleIndex) {

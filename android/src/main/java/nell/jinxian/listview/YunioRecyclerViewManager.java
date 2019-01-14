@@ -146,6 +146,7 @@ public class YunioRecyclerViewManager extends
                     parent.smoothScrollToPosition(index, options);
                 } else {
                     parent.scrollToPosition(index, options);
+					parent.smoothScrollToPosition(index, options);
                 }
                 return;
             }
