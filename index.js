@@ -2,6 +2,7 @@ import RecyclerView from './src/listview-android/RecyclerViewList';
 import DataSource from './src/listview-android/DataSource';
 import SmartRefreshLayout from './src/listview-android/SmartRefresh';
 import AndroidRecyclerView from './src/listview-android/AndroidRecyclerView';
+import RefreshRecyclerView from './src/listview-android/RefreshRecyclerView';
 import TableView from './src/listview-ios/TableView'
 import TableViewSection from './src/listview-ios/TableViewSection'
 import TableViewHeader from './src/listview-ios/TableViewHeader'
@@ -24,6 +25,7 @@ var Views = {
     DataSource,
     SmartRefreshLayout,
     AndroidRecyclerView,
+    RefreshRecyclerView,
     ListViewIos
 }
 
